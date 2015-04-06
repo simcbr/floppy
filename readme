@@ -1,0 +1,160 @@
+1. How to compile the program:
+	make
+	
+	
+2. How to run the program:
+	Usage: fileTransmit [number of random files]
+	example:  ./fileTransmit 3
+
+
+3. Program structure:
+	the program is mainly composed of three components:
+	
+	fileSender:  read file and pack them into floppies, send floppies to receiver side;  receive the file information from receiver, and send diff parts.
+	fileReceiver: receive floppies from sender, and reassemble them into a file and check the integrity of the file.
+	floppyTransmitTest:  maintain the floppy communication channel, control the test process.
+
+
+
+4. Integrity check:
+	CRC is used to check each floppy has been transmitted correctly.
+	MD5 is used to verify the integrity of each block and the whole file.
+	
+	For file synchronization, check the file content block by block (block size is same as the payload length of a floppy). 
+	Once sender sent a file's meta data information to receiver, receiver will check whether it already has this file. 
+	If receiver already has this file but in an old version (different file size, or different MD5), receiver will collect its file's all 
+	blocks' information (offset, length, block MD5), and pack all these data and send back to sender. 
+	Once sender received these information, it will only send the different parts to receiver.
+	
+
+
+
+
+4. Sample output : 
+In following example, program will first generate 3 random files.
+
+1) Transmit Task 
+Sender read these 3 files, and send file metadata information to receiver in a random order.   [each metadata floppy is labeled in "M"]
+Receiver will start receiving the file data according to the first file metadata information floppy it received. [in following example, receiver 
+will receive file 61313.txt]
+Then sender will keep on sending these files data in floppy in a random order to receiver. [in following example, 
+each payload floppy of the file 61313.txt is labeled in "S"; payload floppy of other files is labeled in "D"]
+At the end, receiver will print the information of its received file.
+
+2) Sync Task
+The program will append random data in previous transmitted file [61313.txt]
+Sedner open the file (new version) again, and send the file metadata inforamtion to receiver.
+Once receiver receives the file's metadata information, it checkes whether this is a new version; and generates blocks information and send them 
+back to sender. After found the different blocks, sender will send different parts' blocks to receiver. [updated floppy is labeled in "S"]
+ 
+At last, receiver reports its received file information again (upon got different parts from the new version file). 
+
+
+output log start here: 
+
+$ ./fileTransmit 3
+
+Transmit Task#############################
+Prepare random files:
+File name: 61313.txt
+File (sender) size: 61313
+File MD5: 8136c2b2780753d21c003646d5fb4c7a
+File name: 89357.txt
+File (sender) size: 89357
+File MD5: d59bb35dbe407242f60345f83cad97f3
+File name: 10544.txt
+File (sender) size: 10544
+File MD5: c94406ddadb63c17b4cd5d13c4abea55
+
+S: sending files' metaData to receiver
+update metaData
+MMM  ==>100% sending metaData end
+
+S: sending payload to receiver
+SSSDDDSDSSSSDDSDDDDDDSDDDDDDDDSSDDDSSSDDDDDDDSDDDDDDSSDDDDSSSSDSDDSDDDDSSSDSSSSDSDSDDDSDSDDSDSDDDSDSDDDDSSDSSDSDDDDDDDSSDSDSSDDDDDDSDDSDDDSDDDSSSDDDSSDSSDDDDDDSDSS  ==>100% sending payload end
+RecvStatus-------------------:
+ 62/62 payload floppies
+ Missing 0 blocks :
+ File name: 61313.txt
+ File size: 61313 
+ MD5: 8136c2b2780753d21c003646d5fb4c7a 
+ Verify MD5: 8136c2b2780753d21c003646d5fb4c7a(correct)
+
+Sync Task#############################
+Different version of file 61313.txt found, synchronizing...
+  curFile: size (61313), MD5 (8136c2b2780753d21c003646d5fb4c7a)
+  newFile: size (65292), MD5 (945ddd581aa2ac4b755537c65fb475dd)
+Prepare 3 floppies for file info (62) chunk data 
+R: sending file infor
+same block: 0,1004,da0bd18a0e47ab130aca3be82b3ac9d8
+same block: 1004,1004,df769fcc7426ecb58555887380682660
+same block: 2008,1004,d795317294034fa98825e4d00e6c48bb
+same block: 3012,1004,16d5ead316d3ebb20d04d24689a543e9
+same block: 4016,1004,9022e5d914e4a63fc7ea65a546c36a7a
+same block: 5020,1004,0299dfcb75165f9474b7d3ada2034cfd
+same block: 6024,1004,16fca6cd4f432d91a12e41d6ee5e0b6a
+same block: 7028,1004,75b3d0da0eba217a6b1af8e1285abe4e
+same block: 8032,1004,5a2689db5fbeb895e295305e4d4f1500
+same block: 9036,1004,9930de038304de86f1e7a021dbf70ee0
+same block: 10040,1004,9da4e78a510b47660113917326797649
+same block: 11044,1004,de6f33c48bba92b5a3d093dbd5ae81c3
+same block: 12048,1004,492db27f5bd3641818bb2a464cce2161
+same block: 13052,1004,b5b7d0efe90ace1990d5d0aa0f00ed3c
+same block: 14056,1004,a8d05faaf8bb8e095ae685bafded5109
+same block: 15060,1004,3a0d69f2361b204430dfe94b83c72847
+same block: 16064,1004,1444eb9867cbc0d4128b7e58bf397685
+same block: 17068,1004,5d7d0df32e4017cd27af569092958f69
+same block: 18072,1004,8cc71970c9663ff03591378313dd830c
+same block: 19076,1004,c34c0f0b996e3107c3bd9349a9f0c75d
+same block: 20080,1004,e0241ceba91780ab93dc7ddc3100d1c8
+same block: 21084,1004,52baa7fba9d7e625d0625e5d0b050b00
+same block: 22088,1004,53b2696045b63f1e5b6b1156690fe97a
+same block: 23092,1004,1f4e36b7f49eb03acf9c69e53493f5a8
+same block: 24096,1004,0bb142c85bbb8d453bfe79206b172187
+same block: 25100,1004,b2cfc9de9dabd287ee8eda33595cb132
+same block: 26104,1004,3b1265525087e27ca3b0b944f0bbf9e7
+same block: 27108,1004,1e656413c18a4fa5ae239a34fcbcbbd2
+same block: 28112,1004,e417ebd7f7c2d3b3999fa8b74f86a404
+same block: 29116,1004,b4cca95f413a97689b2a8187e37f8ecf
+same block: 30120,1004,98bdb1d64c3bfdcb925c02cb480cf64f
+same block: 31124,1004,e74157eecab2dc9bb553f01029854b5c
+same block: 32128,1004,fb60243d1f1d3324dbf9a2798ea9213f
+same block: 33132,1004,9c9d00d26c0fad290be053ae81020a29
+same block: 34136,1004,73b9e61a253b272b1a456b9542d2e6d6
+same block: 35140,1004,f6aa647c5d64139c7d4b5742c312ae94
+same block: 36144,1004,272be90ec4a904bf917971a1a461fd41
+same block: 37148,1004,66fc64e9a391c88e7306a644b3421482
+same block: 38152,1004,90f7ef31a9cdd0447470b2ba4890201b
+same block: 39156,1004,3c410f8c79e3bd394821f2ac5f34f45e
+same block: 40160,1004,f284849346fadafafc5e840593f17eef
+same block: 41164,1004,8dcc9676fe8feacd80b3cd0dc89a37ab
+same block: 42168,1004,390f0752ee5c667d657bf2f1809064ca
+same block: 43172,1004,b070f9b8596d230761f64e0a2e6b32e4
+same block: 44176,1004,f90918f5228ceb34fb87effc04185f3f
+same block: 45180,1004,dfd7f3a13d654d60b55a1837481ea849
+same block: 46184,1004,1abe86503ec304ba5a76860c3fc8811b
+same block: 47188,1004,831b5839e6b1cbe792c4697a327198f1
+same block: 48192,1004,a3fddc5c9612c37bb191a4df2bb67d63
+same block: 49196,1004,fef0286914476a252c50e3cf041e4ee4
+same block: 50200,1004,302ead65a9d6d35fb3a25f49e881c016
+same block: 51204,1004,116a68721d3b0a52bfec7fcae13b3da9
+same block: 52208,1004,2cd0443debfa30ead510e22532347a48
+same block: 53212,1004,10335dbb92cc4c4f2721219270c5e22c
+same block: 54216,1004,6325ab2426d84a5f304de1e31e42092b
+same block: 55220,1004,5c7692548de6c2be8ed588a2b2ae4f42
+same block: 56224,1004,7d013fa5a3c3d214e82d928138ec4252
+same block: 57228,1004,befd7db40c79dbde3afc97ccdfe83102
+same block: 58232,1004,accfc8ae3fad8b686cd70e97ec846698
+same block: 59236,1004,7c3373ad46918488dd824451ee015ced
+same block: 60240,1004,04667e012791e5ce82093237830cfddc
+Need update: 5/66 blocks
+S: sending sync blocks
+SSSSS  ==>100% sending update payload end
+RecvStatus-------------------:
+ 66/66 payload floppies
+ Missing 0 blocks :
+ File name: 61313.txt
+ File size: 65292 
+ MD5: 945ddd581aa2ac4b755537c65fb475dd 
+ Verify MD5: 945ddd581aa2ac4b755537c65fb475dd(correct)
+ 
